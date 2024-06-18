@@ -1,5 +1,5 @@
 # whoop
 
-> `whoop` is a Python client for retrieving data from a whoop account.
+> `whoop` is a Python client for retrieving data from a [Whoop](https://www.whoop.com/eu/en/) account.
 
-![results](./docs/day_ahead_auction.png)
+![results](./docs/recovery.png)

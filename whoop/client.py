@@ -53,39 +53,45 @@ class BaseClient(ABC):
         self.user_id = str(self.session.token.get("user", {}).get("id", ""))
 
     def _make_request(
-        self, method: str, url_slug: str, **kwargs: Any
-    ) -> dict[str, Any]:
-        url = f"{REQUEST_URL}/{url_slug}"
-        try:
-            response = self.session.request(method=method, url=url, **kwargs)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as http_err:
-            raise requests.exceptions.HTTPError(
-                f"HTTP error occurred: {http_err}"
-            ) from http_err
-        except requests.exceptions.RequestException as req_err:
-            raise requests.exceptions.RequestException(
-                f"Request error occurred: {req_err}"
-            ) from req_err
-
-    def _make_paginated_request(
         self, method: str, url_slug: str, **kwargs
     ) -> list[dict[str, Any]]:
 
         params = kwargs.pop("params", {})
-        response_data: list[dict[str, Any]] = []
+        records: list[dict[str, Any]] = []
+        url = f"{REQUEST_URL}/{url_slug}"
 
-        while True:
-            response = self._make_request(method, url_slug, params=params, **kwargs)
-            response_data.extend(response["records"])
+        from tqdm import tqdm
 
-            next_token = response.get("next_token")
+        progress_bar = tqdm(desc="Pagination")
+
+        while True:  # Paginate through the results to read the full repsonse.
+            try:
+                response = self.session.request(
+                    method=method, url=url, params=params, **kwargs
+                )
+                response.raise_for_status()
+
+            except requests.exceptions.HTTPError as http_err:
+                raise requests.exceptions.HTTPError(
+                    f"HTTP error occurred: {http_err}"
+                ) from http_err
+            except requests.exceptions.RequestException as req_err:
+                raise requests.exceptions.RequestException(
+                    f"Request error occurred: {req_err}"
+                ) from req_err
+
+            data = response.json()
+            records.extend(data["records"])
+            next_token = data.get("next_token")
+
             if not next_token:
                 break
             params["nextToken"] = next_token
+            progress_bar.update(1)
 
-        return response_data
+        progress_bar.close()
+
+        return records
 
 
 class RecoveryClient(BaseClient):
@@ -105,7 +111,7 @@ class RecoveryClient(BaseClient):
                 )
             return date.astimezone(pytz.utc).isoformat().replace("+00:00", "Z")
 
-        response = self._make_paginated_request(
+        response = self._make_request(
             method="GET",
             url_slug="v1/recovery",
             params={

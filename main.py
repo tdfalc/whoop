@@ -14,8 +14,8 @@ if __name__ == "__main__":
     username = os.getenv("WHOOP_USERNAME")
     password = os.getenv("WHOOP_PASSWORD")
 
-    start_date = dt(2024, 1, 1, tzinfo=pytz.utc)
-    end_date = dt(2024, 6, 10, tzinfo=pytz.utc)
+    start_date = dt(2024, 2, 1, tzinfo=pytz.utc)
+    end_date = dt(2024, 4, 20, tzinfo=pytz.utc)
     client = RecoveryClient(username, password)
     recovery = client.get_recovery(start_date, end_date)
     plot_recovery(recovery, savedir)

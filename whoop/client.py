@@ -77,20 +77,13 @@ class BaseClient(ABC):
         response_data: list[dict[str, Any]] = []
 
         while True:
-            response = self._make_request(
-                method=method,
-                url_slug=url_slug,
-                params=params,
-                **kwargs,
-            )
-
-            response_data += response["records"]
+            response = self._make_request(method, url_slug, params=params, **kwargs)
+            response_data.extend(response["records"])
 
             next_token = response.get("next_token")
-            if next_token:
-                params["nextToken"] = next_token
-            else:
+            if not next_token:
                 break
+            params["nextToken"] = next_token
 
         return response_data
 
